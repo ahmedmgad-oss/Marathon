@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام تسجيل الماراثون</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --card: #141d2e;
+    --card2: #1e2d45;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f4ff;
+    --text2: #8899bb;
+    --text3: #4a5a7a;
+    --gold: #f5c842;
+    --gold2: #c9981f;
+    --silver: #b8c4d8;
+    --bronze: #cd8b4a;
+    --green: #22c55e;
+    --green2: #16a34a;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --blue2: #1d4ed8;
+    --sm-color: #60a5fa;
+    --sf-color: #f472b6;
+    --hm-color: #4ade80;
+    --hf-color: #fb923c;
+    --sm-bg: rgba(96,165,250,0.08);
+    --sf-bg: rgba(244,114,182,0.08);
+    --hm-bg: rgba(74,222,128,0.08);
+    --hf-bg: rgba(251,146,60,0.08);
+    --sm-border: rgba(96,165,250,0.25);
+    --sf-border: rgba(244,114,182,0.25);
+    --hm-border: rgba(74,222,128,0.25);
+    --hf-border: rgba(251,146,60,0.25);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background texture ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(59,130,246,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(244,114,182,0.05) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 16px; }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0d1829 0%, #1a2a45 50%, #0d1829 100%);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 20px 28px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), var(--blue), var(--gold), transparent);
+  }
+
+  .logo-area { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px; }
+  .logo-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--blue2), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.4);
+  }
+  .logo-text { line-height: 1.2; }
+  .logo-text h1 { font-size: 20px; font-weight: 700; color: var(--text); }
+  .logo-text p  { font-size: 12px; color: var(--text2); }
+
+  /* Timer */
+  .timer-block { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .timer-label { font-size: 11px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; }
+  .timer {
+    font-family: 'Oswald', sans-serif;
+    font-size: 44px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 3px;
+    line-height: 1;
+    text-shadow: 0 0 30px rgba(255,255,255,0.1);
+    transition: color 0.3s;
+  }
+  .timer.running { color: var(--green); text-shadow: 0 0 30px rgba(34,197,94,0.4); }
+  .timer.stopped { color: var(--gold); text-shadow: 0 0 30px rgba(245,200,66,0.3); }
+
+  /* Buttons */
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn {
+    padding: 10px 20px; border: none; border-radius: 10px;
+    font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .btn-start  { background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; box-shadow: 0 4px 15px rgba(34,197,94,0.3); }
+  .btn-stop   { background: linear-gradient(135deg, #b91c1c, #ef4444); color: #fff; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
+  .btn-next   { background: linear-gradient(135deg, #b45309, #f59e0b); color: #fff; box-shadow: 0 4px 15px rgba(245,158,11,0.3); }
+  .btn-danger { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+  .btn-ghost  { background: rgba(255,255,255,0.06); color: var(--text2); border: 1px solid var(--border); }
+
+  /* Race badge */
+  .race-badge {
+    background: linear-gradient(135deg, var(--gold2), var(--gold));
+    color: #1a0f00; font-weight: 700; font-size: 13px;
+    padding: 6px 14px; border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(245,200,66,0.4);
+  }
+
+  /* Status bar */
+  .status-bar {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 16px;
+    font-size: 13px; color: var(--text2);
+    margin-bottom: 14px; text-align: center;
+    transition: all 0.3s;
+  }
+  .status-bar.success { border-color: rgba(34,197,94,0.3); color: var(--green); background: rgba(34,197,94,0.07); }
+  .status-bar.error   { border-color: rgba(239,68,68,0.3);  color: #ef4444;      background: rgba(239,68,68,0.07); }
+  .status-bar.syncing { border-color: rgba(59,130,246,0.3); color: var(--blue);  background: rgba(59,130,246,0.07); }
+
+  /* Stats row */
+  .stats-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .stat-chip {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 14px;
+    font-size: 12px; color: var(--text2);
+  }
+  .stat-chip b { color: var(--text); font-weight: 700; }
+
+  /* Section title */
+  .section-title {
+    font-size: 11px; font-weight: 600; color: var(--text3);
+    letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 8px; padding-right: 4px;
+  }
+
+  /* Podium grid */
+  .podium-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 10px; margin-bottom: 14px;
+  }
+  .podium-card {
+    border-radius: 16px; padding: 16px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    position: relative; overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .podium-card.sm { border-color: var(--sm-border); background: linear-gradient(135deg, var(--card), rgba(96,165,250,0.04)); }
+  .podium-card.sf { border-color: var(--sf-border); background: linear-gradient(135deg, var(--card), rgba(244,114,182,0.04)); }
+  .podium-card.hm { border-color: var(--hm-border); background: linear-gradient(135deg, var(--card), rgba(74,222,128,0.04)); }
+  .podium-card.hf { border-color: var(--hf-border); background: linear-gradient(135deg, var(--card), rgba(251,146,60,0.04)); }
+
+  .pod-title {
+    font-size: 12px; font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pod-title span { font-size: 16px; }
+  .sm .pod-title { color: var(--sm-color); }
+  .sf .pod-title { color: var(--sf-color); }
+  .hm .pod-title { color: var(--hm-color); }
+  .hf .pod-title { color: var(--hf-color); }
+
+  .rank-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; border-bottom: 1px solid var(--border);
+    animation: slideIn 0.3s ease;
+  }
+  .rank-row:last-child { border-bottom: none; }
+  @keyframes slideIn { from { opacity:0; transform: translateX(10px); } to { opacity:1; transform: none; } }
+
+  .medal {
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .m1 { background: linear-gradient(135deg, #c9981f, #f5c842); color: #3a2000; box-shadow: 0 2px 8px rgba(245,200,66,0.4); }
+  .m2 { background: linear-gradient(135deg, #7a8fa8, #b8c4d8); color: #1a2535; }
+  .m3 { background: linear-gradient(135deg, #8b5e2a, #cd8b4a); color: #fff; }
+
+  .rank-bib  { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+  .rank-name { flex: 2; font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rank-time { font-family: 'Oswald', sans-serif; font-size: 13px; color: var(--text); flex-shrink: 0; }
+  .rank-race { font-size: 10px; background: rgba(59,130,246,0.15); color: var(--blue); padding: 1px 6px; border-radius: 6px; flex-shrink: 0; }
+  .rank-empty { color: var(--text3); font-size: 12px; text-align: center; padding: 12px 0; }
+
+  /* Registration grid */
+  .reg-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 10px;
+  }
+  .reg-card {
+    border-radius: 16px; padding: 18px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .reg-card:focus-within { box-shadow: 0 0 0 2px rgba(255,255,255,0.08); }
+  .reg-card.sm { border-color: var(--sm-border); }
+  .reg-card.sf { border-color: var(--sf-border); }
+  .reg-card.hm { border-color: var(--hm-border); }
+  .reg-card.hf { border-color: var(--hf-border); }
+
+  .reg-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .reg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .sm .reg-dot { background: var(--sm-color); box-shadow: 0 0 8px var(--sm-color); }
+  .sf .reg-dot { background: var(--sf-color); box-shadow: 0 0 8px var(--sf-color); }
+  .hm .reg-dot { background: var(--hm-color); box-shadow: 0 0 8px var(--hm-color); }
+  .hf .reg-dot { background: var(--hf-color); box-shadow: 0 0 8px var(--hf-color); }
+  .reg-title-text { font-size: 13px; font-weight: 700; }
+  .sm .reg-title-text { color: var(--sm-color); }
+  .sf .reg-title-text { color: var(--sf-color); }
+  .hm .reg-title-text { color: var(--hm-color); }
+  .hf .reg-title-text { color: var(--hf-color); }
+  .reg-count { margin-right: auto; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 8px; border-radius: 10px; }
+
+  .reg-input {
+    width: 100%; padding: 12px; margin-bottom: 10px;
+    border-radius: 10px; border: 1px solid var(--border2);
+    background: var(--bg2); color: var(--text);
+    font-family: 'Oswald', sans-serif; font-size: 28px; font-weight: 500;
+    text-align: center; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield;
+  }
+  .reg-input::-webkit-outer-spin-button,
+  .reg-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .reg-input:focus { border-color: rgba(255,255,255,0.3); box-shadow: 0 0 0 3px rgba(255,255,255,0.05); }
+
+  .btn-register {
+    width: 100%; padding: 12px; border: none; border-radius: 10px;
+    font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+  }
+  .btn-register:active { transform: scale(0.97); }
+  .btn-register:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .sm .btn-register { background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #fff; box-shadow: 0 4px 15px rgba(59,130,246,0.3); }
+  .sf .btn-register { background: linear-gradient(135deg, #9d174d, #f472b6); color: #fff; box-shadow: 0 4px 15px rgba(244,114,182,0.3); }
+  .hm .btn-register { background: linear-gradient(135deg, #166534, #4ade80); color: #fff; box-shadow: 0 4px 15px rgba(74,222,128,0.3); }
+  .hf .btn-register { background: linear-gradient(135deg, #9a3412, #fb923c); color: #fff; box-shadow: 0 4px 15px rgba(251,146,60,0.3); }
+
+  .btn-flash { animation: flashBtn 0.35s ease; }
+  @keyframes flashBtn { 0%{opacity:1} 40%{opacity:0.2} 100%{opacity:1} }
+
+  .log-area { margin-top: 10px; max-height: 90px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  .log-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 11px; color: var(--text3);
+    animation: slideIn 0.25s ease;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-bib  { font-weight: 700; color: var(--text2); font-family: 'Oswald', sans-serif; font-size: 13px; }
+  .log-time { font-family: 'Oswald', sans-serif; font-size: 12px; margin-right: auto; color: var(--text2); }
+  .log-race-tag { font-size: 10px; background: rgba(59,130,246,0.12); color: var(--blue); padding: 1px 5px; border-radius: 5px; }
+  .log-sync { font-size: 10px; }
+  .log-sync.ok    { color: var(--green); }
+  .log-sync.error { color: var(--red); }
+  .log-sync.wait  { color: var(--text3); }
+
+  /* Confirm overlay */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    z-index: 100; align-items: center; justify-content: center;
+  }
+  .confirm-overlay.show { display: flex; }
+  .confirm-box {
+    background: var(--card2); border: 1px solid var(--border2);
+    border-radius: 20px; padding: 32px; max-width: 380px; width: 90%;
+    text-align: center;
+  }
+  .confirm-box h3 { font-size: 18px; margin-bottom: 10px; }
+  .confirm-box p  { color: var(--text2); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+  .confirm-btns   { display: flex; gap: 10px; justify-content: center; }
+
+  /* Loading overlay */
+  .loading-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,14,26,0.85); backdrop-filter: blur(4px);
+    z-index: 200; align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid var(--border2);
+    border-top-color: var(--blue);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--text2); font-size: 14px; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .podium-grid, .reg-grid { grid-template-columns: repeat(2, 1fr); }
+    .timer { font-size: 32px; }
+  }
+  @media (max-width: 560px) {
+    .podium-grid, .reg-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay show" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">جارٍ تحميل بيانات المتسابقين...</div>
+</div>
+
+<!-- Confirm overlay -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">تأكيد</h3>
+    <p id="confirmMsg"></p>
+    <div class="confirm-btns">
+      <button class="btn btn-danger" onclick="doConfirm()">تأكيد</button>
+      <button class="btn btn-ghost" onclick="closeConfirm()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-area">
+      <div class="logo-icon">🏃</div>
+      <div class="logo-text">
+        <h1>ماراثون — نظام التوقيت</h1>
+        <p id="loadStatus">جارٍ التحميل...</p>
+      </div>
+    </div>
+
+    <div class="timer-block">
+      <div class="timer-label">الوقت المنقضي</div>
+      <div class="timer" id="mainTimer">00:00:00.000</div>
+    </div>
+
+    <div class="btn-group">
+      <div class="race-badge" id="raceBadge">سباق 1</div>
+      <button class="btn btn-start" id="btnStart" onclick="toggleTimer()">▶ بدء السباق</button>
+      <button class="btn btn-next"  onclick="askNextRace()">↻ سباق جديد</button>
+      <button class="btn btn-ghost" onclick="askClearAll()">🗑 مسح الكل</button>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar" id="statusBar">جارٍ تحميل بيانات المتسابقين من Google Sheets...</div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-chip">السباق: <b id="curRaceNum">1</b></div>
+    <div class="stat-chip">إجمالي التسجيلات: <b id="totalReg">0</b></div>
+    <div class="stat-chip">متخصصين ولاد: <b id="cnt-sm">0</b></div>
+    <div class="stat-chip">متخصصين بنات: <b id="cnt-sf">0</b></div>
+    <div class="stat-chip">هواة ولاد: <b id="cnt-hm">0</b></div>
+    <div class="stat-chip">هواة بنات: <b id="cnt-hf">0</b></div>
+    <div class="stat-chip">المتسابقون المحملون: <b id="totalLoaded">0</b></div>
+  </div>
+
+  <!-- Podium -->
+  <div class="section-title">لوحة المتصدرين — أفضل 3 (من كل السباقات)</div>
+  <div class="podium-grid">
+    <div class="podium-card sm">
+      <div class="pod-title"><span>🔵</span> متخصصين ولاد</div>
+      <div id="pod-sm"><div class="rank-empty">لا يوجد تسجيل بعد</div></div>
+    </div>
+    <div class="podium-card sf">
+      <div class="pod-title"><span>🔴</span> متخصصين بنات</div>
+      <div id="pod-sf"><div class="rank-empty">لا يوجد تسجيل بعد</div></div>
+    </div>
+    <div class="podium-card hm">
+      <div class="pod-title"><span>🟢</span> هواة ولاد</div>
+      <div id="pod-hm"><div class="rank-empty">لا يوجد تسجيل بعد</div></div>
+    </div>
+    <div class="podium-card hf">
+      <div class="pod-title"><span>🟠</span> هواة بنات</div>
+      <div id="pod-hf"><div class="rank-empty">لا يوجد تسجيل بعد</div></div>
+    </div>
+  </div>
+
+  <!-- Registration -->
+  <div class="section-title">تسجيل الأوقات — اكتب رقم المتسابق واضغط تسجيل أو Enter</div>
+  <div class="reg-grid">
+
+    <div class="reg-card sm">
+      <div class="reg-header">
+        <div class="reg-dot"></div>
+        <div class="reg-title-text">متخصصين ولاد</div>
+        <div class="reg-count" id="cnt-sm-badge">0</div>
+      </div>
+      <input class="reg-input" id="inp-sm" type="number" placeholder="000" inputmode="numeric" disabled />
+      <button class="btn-register" id="btn-sm" onclick="register('sm')" disabled>⚡ تسجيل</button>
+      <div class="log-area" id="log-sm"></div>
+    </div>
+
+    <div class="reg-card sf">
+      <div class="reg-header">
+        <div class="reg-dot"></div>
+        <div class="reg-title-text">متخصصين بنات</div>
+        <div class="reg-count" id="cnt-sf-badge">0</div>
+      </div>
+      <input class="reg-input" id="inp-sf" type="number" placeholder="000" inputmode="numeric" disabled />
+      <button class="btn-register" id="btn-sf" onclick="register('sf')" disabled>⚡ تسجيل</button>
+      <div class="log-area" id="log-sf"></div>
+    </div>
+
+    <div class="reg-card hm">
+      <div class="reg-header">
+        <div class="reg-dot"></div>
+        <div class="reg-title-text">هواة ولاد</div>
+        <div class="reg-count" id="cnt-hm-badge">0</div>
+      </div>
+      <input class="reg-input" id="inp-hm" type="number" placeholder="000" inputmode="numeric" disabled />
+      <button class="btn-register" id="btn-hm" onclick="register('hm')" disabled>⚡ تسجيل</button>
+      <div class="log-area" id="log-hm"></div>
+    </div>
+
+    <div class="reg-card hf">
+      <div class="reg-header">
+        <div class="reg-dot"></div>
+        <div class="reg-title-text">هواة بنات</div>
+        <div class="reg-count" id="cnt-hf-badge">0</div>
+      </div>
+      <input class="reg-input" id="inp-hf" type="number" placeholder="000" inputmode="numeric" disabled />
+      <button class="btn-register" id="btn-hf" onclick="register('hf')" disabled>⚡ تسجيل</button>
+      <div class="log-area" id="log-hf"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8X6Nmsvn7QsmuOMNQWGcVpmiQwxDAtHHYMn6HZnWRrm6IrPgqOHQ2rTcDo3bhe2c/exec";
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let startTime   = null;
+let rafId       = null;
+let running     = false;
+let currentRace = 1;
+let players     = [];   // من الشيت
+let allResults  = { sm:[], sf:[], hm:[], hf:[] };
+let pendingAction = null;
+
+const CATS = {
+  sm: { level:'متخصص', gender:'ذكر'  },
+  sf: { level:'متخصص', gender:'أنثى' },
+  hm: { level:'هاوٍ',  gender:'ذكر'  },
+  hf: { level:'هاوٍ',  gender:'أنثى' },
+};
+
+// ══════════════════════════════════════════
+// LOAD PLAYERS FROM SHEET
+// ══════════════════════════════════════════
+async function loadPlayers() {
+  try {
+    const res  = await fetch(SCRIPT_URL);
+    const data = await res.json();
+    if (data.status === 'ok' && Array.isArray(data.players)) {
+      players = data.players;
+      document.getElementById('totalLoaded').textContent = players.length;
+      document.getElementById('loadStatus').textContent  = `${players.length} متسابق محمّل ✓`;
+      setStatus(`تم تحميل ${players.length} متسابق من Google Sheets ✓`, 'success');
+    } else {
+      setStatus('تحذير: لم يتم تحميل البيانات — التسجيل بالرقم فقط', 'error');
+      document.getElementById('loadStatus').textContent = 'لم يتم تحميل البيانات';
+    }
+  } catch (err) {
+    setStatus('خطأ في الاتصال بالشيت — يمكن التسجيل بالرقم فقط', 'error');
+    document.getElementById('loadStatus').textContent = 'خطأ في الاتصال';
+  } finally {
+    document.getElementById('loadingOverlay').classList.remove('show');
+  }
+}
+
+// ══════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════
+function pad(n,d){ return String(Math.floor(n)).padStart(d,'0'); }
+function fmtTime(ms){
+  return pad(ms/3600000,2)+':'+pad((ms%3600000)/60000,2)+':'+pad((ms%60000)/1000,2)+'.'+pad(ms%1000,3);
+}
+function getElapsed(){ return startTime ? performance.now()-startTime : 0; }
+
+function tick(){
+  document.getElementById('mainTimer').textContent = fmtTime(getElapsed());
+  rafId = requestAnimationFrame(tick);
+}
+
+function toggleTimer(){
+  const btn   = document.getElementById('btnStart');
+  const timer = document.getElementById('mainTimer');
+  if(!running){
+    startTime = performance.now();
+    running   = true;
+    rafId     = requestAnimationFrame(tick);
+    btn.className   = 'btn btn-stop';
+    btn.textContent = '⏸ إيقاف مؤقت';
+    timer.className = 'timer running';
+    ['sm','sf','hm','hf'].forEach(c=>{
+      document.getElementById('inp-'+c).disabled = false;
+      document.getElementById('btn-'+c).disabled = false;
+    });
+    setStatus('السباق '+ currentRace +' جارٍ ⚡ — سجّل رقم المتسابق واضغط Enter', 'success');
+  } else {
+    cancelAnimationFrame(rafId);
+    running = false;
+    btn.className   = 'btn btn-start';
+    btn.textContent = '▶ استئناف';
+    timer.className = 'timer stopped';
+    setStatus('السباق موقوف مؤقتاً — اضغط استئناف', '');
+  }
+}
+
+// ══════════════════════════════════════════
+// REGISTER
+// ══════════════════════════════════════════
+function register(cat){
+  const inp = document.getElementById('inp-'+cat);
+  const bib = inp.value.trim();
+  if(!bib){ inp.focus(); return; }
+  if(!startTime){ inp.focus(); return; }
+
+  const elapsed = getElapsed();
+  const timeStr = fmtTime(elapsed);
+
+  // Find player info
+  const player = players.find(p => String(p.bib).trim() === bib);
+  const name   = player ? player.name : '';
+  const univ   = player ? player.univ : '';
+
+  const entry = { bib, name, univ, time: elapsed, timeStr, race: currentRace, syncStatus: 'wait' };
+  allResults[cat].push(entry);
+  allResults[cat].sort((a,b)=>a.time-b.time);
+
+  inp.value = '';
+  inp.focus();
+
+  // Flash button
+  const btn = document.getElementById('btn-'+cat);
+  btn.classList.add('btn-flash');
+  setTimeout(()=>btn.classList.remove('btn-flash'), 350);
+
+  updatePodium(cat);
+  const logEl = addLog(cat, entry);
+  updateCounts();
+  setStatus(`✓ تم تسجيل #${bib}${name?' — '+name:''} | ${timeStr} | سباق ${currentRace}`, 'success');
+
+  // Sync to sheet
+  syncToSheet(cat, entry, logEl);
+}
+
+// ══════════════════════════════════════════
+// SYNC TO GOOGLE SHEETS
+// ══════════════════════════════════════════
+async function syncToSheet(cat, entry, logEl){
+  const syncEl = logEl ? logEl.querySelector('.log-sync') : null;
+  if(syncEl) syncEl.textContent = '⏳';
+
+  try {
+    setStatus('جارٍ الحفظ في Google Sheets...', 'syncing');
+    const payload = {
+      bib      : entry.bib,
+      time     : entry.timeStr,
+      race     : entry.race,
+      name     : entry.name,
+      univ     : entry.univ,
+      cat      : CATS[cat].level,
+      gender   : CATS[cat].gender,
+      timestamp: new Date().toLocaleString('ar-EG')
+    };
+    const res  = await fetch(SCRIPT_URL, {
+      method : 'POST',
+      body   : JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if(data.status === 'ok' || data.status === 'ok_new_row'){
+      if(syncEl){ syncEl.textContent='✓'; syncEl.className='log-sync ok'; }
+      setStatus(`✓ تم الحفظ في الشيت — #${entry.bib} | الصف ${data.row||''}`, 'success');
+    } else {
+      throw new Error(data.msg||'error');
+    }
+  } catch(err){
+    if(syncEl){ syncEl.textContent='✗'; syncEl.className='log-sync error'; }
+    setStatus(`⚠ خطأ في الحفظ — #${entry.bib} | ${err.message}`, 'error');
+  }
+}
+
+// ══════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════
+const medalClass = ['m1','m2','m3'];
+
+function updatePodium(cat){
+  const pod  = document.getElementById('pod-'+cat);
+  const top3 = allResults[cat].slice(0,3);
+  if(!top3.length){ pod.innerHTML='<div class="rank-empty">لا يوجد تسجيل بعد</div>'; return; }
+  pod.innerHTML = top3.map((r,i)=>`
+    <div class="rank-row">
+      <div class="medal ${medalClass[i]}">${i+1}</div>
+      <div class="rank-bib">#${r.bib}</div>
+      <div class="rank-name">${r.name||'—'}</div>
+      <div class="rank-race">س${r.race}</div>
+      <div class="rank-time">${r.timeStr}</div>
+    </div>
+  `).join('');
+}
+
+function addLog(cat, entry){
+  const log = document.getElementById('log-'+cat);
+  const div = document.createElement('div');
+  div.className = 'log-item';
+  div.innerHTML = `
+    <span class="log-bib">#${entry.bib}</span>
+    <span style="font-size:11px;color:var(--text3)">${entry.name||''}</span>
+    <span class="log-race-tag">س${entry.race}</span>
+    <span class="log-time">${entry.timeStr}</span>
+    <span class="log-sync wait">⏳</span>
+  `;
+  log.prepend(div);
+  return div;
+}
+
+function updateCounts(){
+  let total = 0;
+  ['sm','sf','hm','hf'].forEach(c=>{
+    const n = allResults[c].length;
+    document.getElementById('cnt-'+c).textContent = n;
+    document.getElementById('cnt-'+c+'-badge').textContent = n;
+    total += n;
+  });
+  document.getElementById('totalReg').textContent = total;
+}
+
+function setStatus(msg, type){
+  const el = document.getElementById('statusBar');
+  el.textContent  = msg;
+  el.className    = 'status-bar' + (type ? ' '+type : '');
+}
+
+// ══════════════════════════════════════════
+// RACE MANAGEMENT
+// ══════════════════════════════════════════
+function askNextRace(){
+  pendingAction = 'next';
+  document.getElementById('confirmTitle').textContent = 'سباق جديد';
+  document.getElementById('confirmMsg').textContent   = 'سيتوقف العداد ويبدأ من الصفر للسباق الجديد.\nالنتائج السابقة محفوظة ✓';
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+
+function askClearAll(){
+  pendingAction = 'clear';
+  document.getElementById('confirmTitle').textContent = 'مسح جميع النتائج';
+  document.getElementById('confirmMsg').textContent   = 'سيتم حذف جميع النتائج من كل السباقات نهائياً. هل أنت متأكد؟';
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+
+function doConfirm(){
+  closeConfirm();
+  if(pendingAction==='next') doNextRace();
+  else if(pendingAction==='clear') doClearAll();
+  pendingAction = null;
+}
+
+function closeConfirm(){
+  document.getElementById('confirmOverlay').classList.remove('show');
+}
+
+function doNextRace(){
+  cancelAnimationFrame(rafId);
+  running = false; startTime = null; currentRace++;
+  const timer = document.getElementById('mainTimer');
+  timer.textContent = '00:00:00.000'; timer.className = 'timer';
+  document.getElementById('btnStart').className   = 'btn btn-start';
+  document.getElementById('btnStart').textContent = '▶ بدء السباق';
+  document.getElementById('raceBadge').textContent = 'سباق ' + currentRace;
+  document.getElementById('curRaceNum').textContent = currentRace;
+  ['sm','sf','hm','hf'].forEach(c=>{
+    document.getElementById('inp-'+c).disabled = true;
+    document.getElementById('inp-'+c).value    = '';
+    document.getElementById('btn-'+c).disabled = true;
+    document.getElementById('log-'+c).innerHTML = '';
+  });
+  setStatus('✓ جاهز للسباق ' + currentRace + ' — النتائج السابقة محفوظة في لوحة المتصدرين', 'success');
+}
+
+function doClearAll(){
+  cancelAnimationFrame(rafId);
+  running = false; startTime = null; currentRace = 1;
+  allResults = {sm:[],sf:[],hm:[],hf:[]};
+  document.getElementById('mainTimer').textContent = '00:00:00.000';
+  document.getElementById('mainTimer').className   = 'timer';
+  document.getElementById('btnStart').className    = 'btn btn-start';
+  document.getElementById('btnStart').textContent  = '▶ بدء السباق';
+  document.getElementById('raceBadge').textContent  = 'سباق 1';
+  document.getElementById('curRaceNum').textContent = '1';
+  ['sm','sf','hm','hf'].forEach(c=>{
+    document.getElementById('inp-'+c).disabled = true;
+    document.getElementById('inp-'+c).value    = '';
+    document.getElementById('btn-'+c).disabled = true;
+    document.getElementById('log-'+c).innerHTML = '';
+    document.getElementById('pod-'+c).innerHTML = '<div class="rank-empty">لا يوجد تسجيل بعد</div>';
+    document.getElementById('cnt-'+c).textContent = '0';
+    document.getElementById('cnt-'+c+'-badge').textContent = '0';
+  });
+  document.getElementById('totalReg').textContent = '0';
+  setStatus('تمت إعادة الضبط الكامل', '');
+}
+
+// ══════════════════════════════════════════
+// KEYBOARD — Enter to register
+// ══════════════════════════════════════════
+['sm','sf','hm','hf'].forEach(cat=>{
+  document.getElementById('inp-'+cat).addEventListener('keydown', e=>{
+    if(e.key==='Enter') register(cat);
+  });
+});
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+loadPlayers();
+</script>
+</body>
+</html>
